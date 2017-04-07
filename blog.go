@@ -1,4 +1,4 @@
-package main
+package BlogggerBot
 
 import (
 	"time"
@@ -19,10 +19,11 @@ type Blog struct {
 
 type Post struct {
 	gorm.Model
-	BlogID      int       `gorm:"NOT NULL"`
+	BlogID      uint `gorm:"NOT NULL"`
+	Blog        Blog
 	Author      string    `gorm:"SIZE:256;NOT NULL"`
 	Title       string    `gorm:"SIZE:2048;NOT NULL"`
-	Summary     string    `gorm:"NOT NULL"`
+	Content     string    `gorm:"NOT NULL"`
 	PublishedAt time.Time `gorm:"NOT NULL"`
 	URL         string    `gorm:"NOT NULL"`
 	GUID        string    `gorm:"NOT NULL;UNIQUE"`
@@ -30,10 +31,11 @@ type Post struct {
 }
 
 type BlogService interface {
-	GetBlog(int) (Blog, error)
+	GetBlog(uint) (Blog, error)
 	GetBlogs() ([]Blog, error)
 	CreateBlog(*Blog) error
+	UpdatedBlog(*Blog) error
 	CreatePost(*Post) error
-	GetNewPosts() ([]Post, error)
+	GetNewPosts() (*[]Post, error)
 	Notify(*Post) error
 }

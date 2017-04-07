@@ -1,4 +1,4 @@
-package main
+package feed
 
 import (
 	"time"
@@ -18,7 +18,7 @@ func NewFeedReader() *FeedReader {
 
 func (f *FeedReader) GetBlog(url string) (gofeed.Feed, error) {
 	feed, err := f.f.ParseURL(url)
-	return feed, err
+	return *feed, err
 }
 
 func (f *FeedReader) GetNewPosts(url string, since time.Time) ([]gofeed.Item, error) {
@@ -26,7 +26,7 @@ func (f *FeedReader) GetNewPosts(url string, since time.Time) ([]gofeed.Item, er
 	if err != nil {
 		return []gofeed.Item{}, err
 	}
-	posts := make([]gofeed.Item, len(feed.Items))
+	var posts []gofeed.Item
 	if feed.UpdatedParsed.After(since) {
 		for _, item := range feed.Items {
 			if item.PublishedParsed.After(since) {
