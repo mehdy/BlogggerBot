@@ -36,6 +36,6 @@ type BlogService interface {
 	CreateBlog(*Blog) error
 	UpdatedBlog(*Blog) error
 	CreatePost(*Post) error
-	GetNewPosts() (*[]Post, error)
+	GetNewPosts() ([]Post, error)
 	Notify(*Post) error
 }

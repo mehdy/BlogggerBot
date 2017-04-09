@@ -36,13 +36,10 @@ func (s *BlogService) CreatePost(p *BlogggerBot.Post) error {
 	return s.DB.Create(p).Error
 }
 
-func (s *BlogService) GetNewPosts() (*[]BlogggerBot.Post, error) {
+func (s *BlogService) GetNewPosts() ([]BlogggerBot.Post, error) {
 	var posts []BlogggerBot.Post
 	err := s.DB.Not("notified", true).Find(&posts).Error
-	for _, p := range posts {
-		s.DB.Model(&p).Related(&p.Blog)
-	}
-	return &posts, err
+	return posts, err
 }
 
 func (s *BlogService) Notify(p *BlogggerBot.Post) error {

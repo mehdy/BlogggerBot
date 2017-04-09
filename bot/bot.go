@@ -73,18 +73,25 @@ func (b *Bot) defaultHandler(u tgbotapi.Update) {
 }
 
 func (b *Bot) SendNewPosts(u tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(u.Message.Chat.ID, "starting to send updated posts...")
+	b.b.Send(msg)
 	posts, err := b.BS.GetNewPosts()
 	if err != nil {
 		log.Panicln(err)
+		msg := tgbotapi.NewMessage(u.Message.Chat.ID, "Unable to get updated posts")
+		b.b.Send(msg)
 	}
 	for _, post := range posts {
-		text := fmt.Sprintf(viper.GetString("BOT_MESSAGE_TEMPLATE"), post.Blog.Title, post.Title, post.URL)
+		text := fmt.Sprintf(viper.GetString("BOT_MESSAGE_TEMPLATE"), post.Author, post.Title, post.URL)
 		msg := tgbotapi.NewMessageToChannel(viper.GetString("BOT_CHANNEL"), text)
 		b.b.Send(msg)
 		if err := b.BS.Notify(&post); err != nil {
 			log.Println(err)
 		}
 	}
+	msg = tgbotapi.NewMessage(u.Message.Chat.ID, "sent all updated posts")
+	b.b.Send(msg)
+
 }
 
 func (b *Bot) UpdatePosts(u tgbotapi.Update) {
@@ -112,6 +119,13 @@ func (b *Bot) UpdatePosts(u tgbotapi.Update) {
 				URL:         feed.Link,
 				GUID:        feed.GUID,
 			}
+
+			if feed.Author != nil && feed.Author.Name != "" {
+				p.Author = feed.Author.Name
+			} else {
+				p.Author = blog.Title
+			}
+
 			b.BS.CreatePost(&p)
 		}
 
