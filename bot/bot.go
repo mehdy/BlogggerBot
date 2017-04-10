@@ -151,7 +151,7 @@ func (b *Bot) AddNewBlog(u tgbotapi.Update) {
 			Title:         feed.Title,
 			Description:   feed.Description,
 			Language:      feed.Language,
-			FeedURL:       feed.Link,
+			FeedURL:       parsed[1],
 			LastUpdatedAt: time.Now(),
 		}
 		if err := b.BS.CreateBlog(&blog); err != nil {
