@@ -27,11 +27,9 @@ func (f *FeedReader) GetNewPosts(url string, since time.Time) ([]gofeed.Item, er
 		return []gofeed.Item{}, err
 	}
 	var posts []gofeed.Item
-	if feed.UpdatedParsed.After(since) {
-		for _, item := range feed.Items {
-			if item.PublishedParsed.After(since) {
-				posts = append(posts, *item)
-			}
+	for _, item := range feed.Items {
+		if item.PublishedParsed != nil && item.PublishedParsed.After(since) {
+			posts = append(posts, *item)
 		}
 	}
 	return posts, nil
