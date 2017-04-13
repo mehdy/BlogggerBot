@@ -1,8 +1,11 @@
 package bot
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -14,6 +17,7 @@ import (
 
 type Bot struct {
 	b        *tgbotapi.BotAPI
+	hc       *http.Client
 	handlers map[string]func(tgbotapi.Update)
 	BS       BlogggerBot.BlogService
 	FS       BlogggerBot.FeedService
@@ -26,7 +30,11 @@ func NewBot() *Bot {
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	b := Bot{b: bot, handlers: map[string]func(tgbotapi.Update){}}
+	b := Bot{
+		b:        bot,
+		hc:       &http.Client{Timeout: 3 * time.Second},
+		handlers: map[string]func(tgbotapi.Update){},
+	}
 
 	b.handlers["/new_blog"] = b.AddNewBlog
 	b.handlers["/update_posts"] = b.UpdatePosts
@@ -82,7 +90,7 @@ func (b *Bot) SendNewPosts(u tgbotapi.Update) {
 		b.b.Send(msg)
 	}
 	for _, post := range posts {
-		text := fmt.Sprintf(viper.GetString("BOT_MESSAGE_TEMPLATE"), post.Author, post.Title, post.URL)
+		text := fmt.Sprintf(viper.GetString("BOT_MESSAGE_TEMPLATE"), post.Author, post.Title, post.ShortURL)
 		msg := tgbotapi.NewMessageToChannel(viper.GetString("BOT_CHANNEL"), text)
 		b.b.Send(msg)
 		if err := b.BS.Notify(&post); err != nil {
@@ -112,11 +120,33 @@ func (b *Bot) UpdatePosts(u tgbotapi.Update) {
 		}
 
 		for _, feed := range feeds {
+			var shortURL string
+			body := bytes.NewBuffer([]byte(fmt.Sprintf(`{"longUrl": "%s"}`, feed.Link)))
+			reqUrl := fmt.Sprintf("https://www.googleapis.com/urlshortener/v1/url?key=%s",
+				viper.GetString("API_TOKEN"))
+			req, err := http.NewRequest("POST", reqUrl, body)
+			if err == nil {
+				req.Header.Set("Content-Type", "application/json")
+				resp, err := b.hc.Do(req)
+				if err == nil {
+					var res map[string]string
+					if err := json.NewDecoder(resp.Body).Decode(&res); err == nil {
+						if id, ok := res["id"]; ok {
+							shortURL = id
+						}
+					}
+				}
+			}
+
+			if shortURL == "" {
+				shortURL = feed.Link
+			}
 			p := BlogggerBot.Post{
 				BlogID:      blog.ID,
 				Title:       feed.Title,
 				PublishedAt: *feed.PublishedParsed,
 				URL:         feed.Link,
+				ShortURL:    shortURL,
 				GUID:        feed.GUID,
 			}
 

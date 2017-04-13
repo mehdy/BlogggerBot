@@ -26,8 +26,9 @@ type Post struct {
 	Content     string    `gorm:"NOT NULL"`
 	PublishedAt time.Time `gorm:"NOT NULL"`
 	URL         string    `gorm:"NOT NULL"`
-	GUID        string    `gorm:"NOT NULL;UNIQUE"`
-	Notified    bool      `gorm:"NOT NULL;DEFAULT:false"`
+	ShortURL    string
+	GUID        string `gorm:"NOT NULL;UNIQUE"`
+	Notified    bool   `gorm:"NOT NULL;DEFAULT:false"`
 }
 
 type BlogService interface {
